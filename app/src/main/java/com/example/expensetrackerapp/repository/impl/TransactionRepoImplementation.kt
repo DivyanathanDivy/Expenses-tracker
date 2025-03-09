@@ -37,6 +37,10 @@ class TransactionRepoImplementation @Inject  constructor(
         TODO("Not yet implemented")
     }
 
+    override suspend fun getAmountByInterval(long: Long): Flow<List<Double>> {
+        return transactionDao.getAmountByTime(long)
+    }
+
     override suspend fun fetchFromServerAndSaveToDB(){
         val sampleTransactions = listOf(
             TransactionEntity(

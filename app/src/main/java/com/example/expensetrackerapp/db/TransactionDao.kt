@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.expensetrackerapp.db.entiity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
+import java.sql.Time
 
 @Dao
 interface TransactionDao {
@@ -20,16 +21,6 @@ interface TransactionDao {
     suspend fun insertTransaction(transactions: TransactionEntity)
 
 
-    /*@Query(
-        """
-    SELECT COALESCE(
-        COALESCE((SELECT SUM(amount) FROM TransactionsTable WHERE paymentType = 'Credited'), 0) - 
-        COALESCE((SELECT SUM(amount) FROM TransactionsTable WHERE paymentType = 'Debited'), 0), 
-        0
-    ) AS availableBalance
-"""
-    )*/
-
     @Query("""
     SELECT COALESCE(
         SUM(CASE WHEN paymentType = 'Credited' THEN COALESCE(amount, 0) ELSE 0 END) - 
@@ -39,4 +30,12 @@ interface TransactionDao {
     FROM TransactionsTable
 """)
     fun getTotalAmount(): Flow<Double>
+
+
+    @Query("""
+        SELECT amount FROM TransactionsTable 
+        WHERE date > :dateInMillis
+    """)
+    fun getAmountByTime(dateInMillis: Long): Flow<List<Double>>
 }
+

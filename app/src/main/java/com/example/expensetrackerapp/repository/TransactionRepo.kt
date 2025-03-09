@@ -10,6 +10,7 @@ interface TransactionRepo {
     suspend fun addTransaction(transaction: List<TransactionEntity>)
     suspend fun updateTransaction(transaction: TransactionEntity)
     suspend fun deleteTransaction(transaction: TransactionEntity)
+    suspend fun getAmountByInterval(long: Long):Flow<List<Double>>
     suspend fun fetchFromServerAndSaveToDB()
     suspend fun getUserBalance():Flow<Double>
 }

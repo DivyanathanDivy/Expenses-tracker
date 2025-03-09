@@ -8,7 +8,7 @@ import com.example.expensetrackerapp.data.Payment
 data class TransactionEntity(
     @PrimaryKey val id: String,
     val title: String,
-    val paymentType: String, // Use String to simplify enum storage
+    val paymentType: String,
     val amount: Double,
     val imageUrl: String,
     val date: Long,

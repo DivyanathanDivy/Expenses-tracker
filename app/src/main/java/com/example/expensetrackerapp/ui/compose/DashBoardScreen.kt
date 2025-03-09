@@ -76,7 +76,7 @@ fun HomeScreen(dashboardViewModel: DashboardViewModel = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        GraphPlaceholder()
+        GraphPlaceholder(dashboardViewModel.userChartData.collectAsState().value)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -146,7 +146,7 @@ fun BalanceDisplaySection(balance: Double) {
 }
 
 @Composable
-fun GraphPlaceholder() {
+fun GraphPlaceholder(yPoints: List<Float>) {
     Box(
         modifier= Modifier
             .fillMaxWidth()
@@ -155,7 +155,7 @@ fun GraphPlaceholder() {
             .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center
     ) {
-        CubicChart()
+        CubicChart(yPoints = yPoints)
     }
 
 }
@@ -169,7 +169,7 @@ fun CubicChart(
 ) {
     val spacing = 100f
     val xLabels = listOf("1D", "5D", "1M", "3M", "6M", "1Y")  // X-axis labels (days)
-    val maxAmount = 500f  // Maximum value for Y-axis
+    val maxAmount = yPoints.maxOrNull() ?: 100f  // Maximum value for Y-axis
 
     Box(
         modifier = Modifier
@@ -340,11 +340,6 @@ fun TransactionHistorySection(state:TransactionUI) {
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             color = Color.Black
         )
-//        Text(
-//            text = "Today",
-//            style = MaterialTheme.typography.bodyMedium,
-//            color = Color.Black.copy(alpha = 0.6f)
-//        )
     }
 
     Spacer(modifier = Modifier.height(8.dp))

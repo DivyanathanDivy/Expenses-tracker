@@ -10,6 +10,7 @@ import com.example.expensetrackerapp.db.entiity.TransactionEntity
 import com.example.expensetrackerapp.di.DispatcherIo
 import com.example.expensetrackerapp.domain.RecipientUseCase
 import com.example.expensetrackerapp.domain.TransactionUseCase
+import com.example.expensetrackerapp.viewmodel.uistate.ChartInterval
 import com.example.expensetrackerapp.viewmodel.uistate.RecipientUI
 import com.example.expensetrackerapp.viewmodel.uistate.TransactionUI
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,6 +45,9 @@ class DashboardViewModel @Inject constructor(
     private val _userBalance: MutableStateFlow<Double> = MutableStateFlow(0.0)
     val userBalance: StateFlow<Double> = _userBalance
 
+    private val _userChartData: MutableStateFlow<List<Float>> = MutableStateFlow(emptyList())
+    val userChartData: StateFlow<List<Float>> = _userChartData
+
     private var initialRecipientDataLoaded = false
 
 
@@ -76,10 +80,25 @@ class DashboardViewModel @Inject constructor(
                 }
 
                 launch {
+                    getChartData()
+                }
+
+                launch {
                     simulateSynOnTransaction() // Simulate a real-time sync scenario
                 }
             }
         }
+    }
+
+    private suspend fun getChartData(chartInterval: ChartInterval = ChartInterval.OneDay) {
+        transactionUseCase.getTransactionByInterval(chartInterval)
+            .flowOn(dispatcherIO)
+            .catch { e ->
+                Log.e(TAG, "getUserBalance: Error Occurred", e)
+            }
+            .collect { balance ->
+                _userChartData.value = balance
+            }
     }
 
     private suspend fun getUserBalance() {
@@ -151,12 +170,12 @@ class DashboardViewModel @Inject constructor(
      * The updated value can be verified after 5 seconds.
      */
     private suspend fun simulateSynOnTransaction(){
-        delay(5000)//5 seconds
+        delay(2000)//5 seconds
 
         val uuid = UUID.randomUUID().toString()
         val sampleResponse = TransactionResponse(
             id = uuid,
-            amount = Random.nextDouble(1.00, 50.00),
+            amount = Random.nextDouble(100.00, 500.00),
             date = System.currentTimeMillis(),
             title = "G-pay-${uuid.substring(0,4)}",
             paymentType = Payment.Credit(),
@@ -171,6 +190,7 @@ class DashboardViewModel @Inject constructor(
 
         transactionUseCase.addTransaction(sampleResponse.toTransaction())
         recipientUseCase.addRecipient(sampleResponse.toRecipient())
+        simulateSynOnTransaction()
 
     }
 
