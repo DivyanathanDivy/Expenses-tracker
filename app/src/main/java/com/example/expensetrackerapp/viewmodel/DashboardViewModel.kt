@@ -82,9 +82,9 @@ class DashboardViewModel @Inject constructor(
                     getChartData()
                 }
 
-                /*launch {
+                launch {
                     simulateSynOnTransaction() // Simulate a real-time sync scenario
-                }*/
+                }
             }
         }
     }

@@ -3,6 +3,7 @@ package com.example.expensetrackerapp.ui.compose
 import android.graphics.RectF
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,7 +54,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.expensetrackerapp.R
@@ -70,7 +70,7 @@ import java.util.Locale
 
 
 @Composable
-fun HomeScreen(dashboardViewModel: DashboardViewModel = hiltViewModel()) {
+fun HomeScreen(dashboardViewModel: DashboardViewModel) {
 
     Column(
         modifier = Modifier
@@ -436,13 +436,20 @@ fun TransactionHistorySection(state:TransactionUI) {
 
 
 @Composable
-fun RecipientsGrid(recipients :List<Recipient> = listOf(Recipient("1","karthik","email","https://i.pravatar.cc/150?img=10"))) {
+fun RecipientsGrid(
+    recipients: List<Recipient> = listOf(Recipient("1", "karthik", "email", "https://i.pravatar.cc/150?img=10"))
+) {
+    // State to control whether to show all recipients or only the first 5
+    var showAllRecipients by remember { mutableStateOf(false) }
 
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        itemsIndexed(recipients.take(5)) {index, recipient ->
+        // Decide the number of items to show based on state
+        val displayedRecipients = if (showAllRecipients) recipients else recipients.take(5)
+
+        itemsIndexed(displayedRecipients) { index, recipient ->
             Box(
                 modifier = Modifier.size(52.dp),
                 contentAlignment = Alignment.Center
@@ -460,15 +467,18 @@ fun RecipientsGrid(recipients :List<Recipient> = listOf(Recipient("1","karthik",
                         .size(52.dp)
                         .clip(CircleShape)
                 )
-                if (index == 4 && recipients.size>5) {
+
+                // Show "+" indicator if there are more recipients and we're not showing all
+                if (index == 4 && recipients.size > 5 && !showAllRecipients) {
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .background(Color.Black.copy(alpha = 0.6f), shape = CircleShape),
+                            .background(Color.Black.copy(alpha = 0.6f), shape = CircleShape)
+                            .clickable { showAllRecipients = true },  // Click listener to show all recipients
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "+${recipients.size-5}",
+                            text = "+${recipients.size - 5}",
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -476,11 +486,10 @@ fun RecipientsGrid(recipients :List<Recipient> = listOf(Recipient("1","karthik",
                     }
                 }
             }
-
         }
-
     }
 }
+
 
 @Composable
 fun TransactionItem(transaction: Transaction) {
