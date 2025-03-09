@@ -74,19 +74,19 @@ fun HomeScreen(dashboardViewModel: DashboardViewModel = hiltViewModel()) {
 
         BalanceDisplaySection(dashboardViewModel.userBalance.collectAsState().value)
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         GraphPlaceholder(dashboardViewModel.userChartData.collectAsState().value)
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         RecipientsSection(dashboardViewModel.recipientUiState.collectAsState().value)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         TransactionHistorySection(dashboardViewModel.transactionUiState.collectAsState().value)
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
@@ -150,7 +150,7 @@ fun GraphPlaceholder(yPoints: List<Float>) {
     Box(
         modifier= Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .height(200.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center
@@ -167,67 +167,71 @@ fun CubicChart(
     yPoints: List<Float> = listOf(199f, 52f, 193f, 290f, 150f, 445f),
     graphColor: Color = Color.White
 ) {
-    val spacing = 100f
-    val xLabels = listOf("1D", "5D", "1M", "3M", "6M", "1Y")  // X-axis labels (days)
-    val maxAmount = yPoints.maxOrNull() ?: 100f  // Maximum value for Y-axis
+    val spacing = 80f  // Increased left padding for 3-digit Y-axis labels
+    val extraSpace = 50f  // Right padding for last X-axis label
+    val extraBottomHeight = 50f  // Extra height for bottom padding and X-axis labels
+    val extraTopHeight = 50f  // Extra height for top padding
+    val xLabels = listOf("1D", "5D", "1M", "3M", "6M", "1Y")
+    val maxAmount = yPoints.maxOrNull()?.let {
+        kotlin.math.ceil(it / 100f) * 100f  // Round up to the nearest hundred
+    } ?: 100f
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(color = Color.Black)
-            .padding(16.dp,0.dp,0.dp,16.dp)
     ) {
         Canvas(
             modifier = modifier
                 .fillMaxWidth()
-                .height(250.dp)
-                .clip(RoundedCornerShape(20.dp))  // Rounded corners
-                .background(Color(0xFF1F1F1F))    // Dark background color
+                .height(350.dp)  // Increased height for Y-axis and padding
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color(0xFF1F1F1F))
         ) {
-            // Draw grid lines and labels
             val gridColor = Color(0xFF3A3A3A)
             val horizontalLines = 5
             val verticalLines = xLabels.size - 1
 
             val yStep = maxAmount / horizontalLines
-            val xStep = (size.width - spacing) / verticalLines
+            val xStep = (size.width - spacing - extraSpace) / verticalLines
 
+            // Draw horizontal grid lines and Y-axis labels
             for (i in 0..horizontalLines) {
-                val y = i * (size.height / horizontalLines)
+                val y = extraTopHeight + i * ((size.height - extraTopHeight - extraBottomHeight) / horizontalLines)
                 drawLine(
                     color = gridColor,
-                    start = Offset(0f, y),
+                    start = Offset(spacing, y),  // Start grid lines after left padding
                     end = Offset(size.width, y),
                     strokeWidth = 1.dp.toPx()
                 )
-                // Y-axis labels
                 drawContext.canvas.nativeCanvas.apply {
                     drawText(
                         (maxAmount - i * yStep).toInt().toString(),
-                        20f,
+                        spacing - 20f,  // Move labels further left for visibility
                         y + 10f,
                         android.graphics.Paint().apply {
                             color = android.graphics.Color.LTGRAY
                             textSize = 28f
+                            textAlign = android.graphics.Paint.Align.RIGHT  // Align labels to the right edge
                         }
                     )
                 }
             }
 
+            // Draw vertical grid lines and X-axis labels
             for (i in 0..verticalLines) {
                 val x = spacing + i * xStep
                 drawLine(
                     color = gridColor,
-                    start = Offset(x, 0f),
-                    end = Offset(x, size.height),
+                    start = Offset(x, extraTopHeight),  // Start from extraTopHeight
+                    end = Offset(x, size.height - extraBottomHeight),  // End before extraBottomHeight
                     strokeWidth = 1.dp.toPx()
                 )
-                // X-axis labels
                 drawContext.canvas.nativeCanvas.apply {
                     drawText(
                         xLabels[i],
                         x,
-                        size.height - 10f,
+                        size.height - 10f,  // X-axis labels stay at bottom
                         android.graphics.Paint().apply {
                             color = android.graphics.Color.LTGRAY
                             textSize = 28f
@@ -237,20 +241,21 @@ fun CubicChart(
                 }
             }
 
-            val spacePerHour = (size.width - spacing) / yPoints.size
+            val spacePerHour = (size.width - spacing - extraSpace) / yPoints.size
             val normX = mutableListOf<Float>()
             val normY = mutableListOf<Float>()
 
+            // Create a smooth cubic path
             val strokePath = Path().apply {
                 for (i in yPoints.indices) {
                     val currentX = spacing + i * spacePerHour
-                    val currentY = size.height - (yPoints[i] / maxAmount * size.height)  // Normalize Y-axis
+                    val currentY = size.height - extraBottomHeight - (yPoints[i] / maxAmount * (size.height - extraTopHeight - extraBottomHeight))
 
                     if (i == 0) {
                         moveTo(currentX, currentY)
                     } else {
                         val previousX = spacing + (i - 1) * spacePerHour
-                        val previousY = size.height - (yPoints[i - 1] / maxAmount * size.height)
+                        val previousY = size.height - extraBottomHeight - (yPoints[i - 1] / maxAmount * (size.height - extraTopHeight - extraBottomHeight))
 
                         val conX1 = (previousX + currentX) / 2f
                         val conX2 = (previousX + currentX) / 2f
@@ -280,13 +285,13 @@ fun CubicChart(
             )
 
             // Draw points and markers
-            (normX.indices).forEach { index ->
+            normX.indices.forEach { index ->
                 drawCircle(
                     color = graphColor,
                     radius = 6.dp.toPx(),
                     center = Offset(normX[index], normY[index])
                 )
-                if (index == normX.size - 2) {  // Highlight last significant point
+                if (index == normX.size - 2) {
                     drawCircle(
                         color = Color.White,
                         radius = 6.dp.toPx(),
@@ -297,6 +302,10 @@ fun CubicChart(
         }
     }
 }
+
+
+
+
 
 
 

@@ -48,12 +48,11 @@ class DashboardViewModel @Inject constructor(
     private val _userChartData: MutableStateFlow<List<Float>> = MutableStateFlow(emptyList())
     val userChartData: StateFlow<List<Float>> = _userChartData
 
-    private var initialRecipientDataLoaded = false
+    var initialFetchToLoadDataCount = 0
 
 
     init {
-        Log.d(TAG, "Init block :")
-            loadInitialData()
+        loadInitialData()
     }
 
     /**
@@ -83,9 +82,9 @@ class DashboardViewModel @Inject constructor(
                     getChartData()
                 }
 
-                launch {
+                /*launch {
                     simulateSynOnTransaction() // Simulate a real-time sync scenario
-                }
+                }*/
             }
         }
     }
@@ -126,24 +125,9 @@ class DashboardViewModel @Inject constructor(
                 if (recipientList.isEmpty()) {
                     recipientUseCase.fetchFromServer()// Perform one-time operations here to load the initial data
                 }
-
-                if (initialRecipientDataLoaded.not()) {
-                    addTestRecipient() // On every launch of the app it will one item
-                    initialRecipientDataLoaded = initialRecipientDataLoaded.not()
-                }
             }
     }
 
-    private suspend fun addTestRecipient() {
-        recipientUseCase.addRecipient(
-            Recipient(
-                UUID.randomUUID().toString(),
-                "test",
-                "test",
-                "test"
-            )
-        )
-    }
 
     private suspend fun getTransactions() {
         transactionUseCase.getTransactions()
@@ -165,20 +149,22 @@ class DashboardViewModel @Inject constructor(
     /**
      * Simulates a real-time sync scenario where a transaction occurs on another device,
      * triggering a notification via FCM or Socket.
-     * This function is executed 5 seconds after the app launches and inserts a sample response.
+     * This function is executed 3 seconds after the app launches and inserts a sample response.
      * Since we are observing the data with Flow, the UI will update automatically once the value is inserted.
-     * The updated value can be verified after 5 seconds.
+     * The updated value can be verified after 3 seconds.
      */
     private suspend fun simulateSynOnTransaction(){
-        delay(2000)//5 seconds
+        delay(3000)//3 seconds
+
+        val arrayPayment = arrayOf("G-Pay","Phone-Pe","Upi-Payment") // For random payment
 
         val uuid = UUID.randomUUID().toString()
         val sampleResponse = TransactionResponse(
             id = uuid,
             amount = Random.nextDouble(100.00, 500.00),
             date = System.currentTimeMillis(),
-            title = "G-pay-${uuid.substring(0,4)}",
-            paymentType = Payment.Credit(),
+            title = "${arrayPayment[Random.nextInt(0, 3)]}-${uuid.substring(0,4)}",
+            paymentType = if (Random.nextInt(0, 2) == 0) Payment.Credit() else Payment.Debited(),
             imageUrl = "https://raw.githubusercontent.com/mouredev/mouredev/master/mouredev_github_profile.png",
             recipient = Recipient(
                 id = uuid,
@@ -190,7 +176,9 @@ class DashboardViewModel @Inject constructor(
 
         transactionUseCase.addTransaction(sampleResponse.toTransaction())
         recipientUseCase.addRecipient(sampleResponse.toRecipient())
-        simulateSynOnTransaction()
+
+        if (++initialFetchToLoadDataCount < 5) // Fetch for the first time on 3 sec interval
+            simulateSynOnTransaction()
 
     }
 
