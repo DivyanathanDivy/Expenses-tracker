@@ -3,7 +3,10 @@ package com.example.expensetrackerapp.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.expensetrackerapp.data.Payment
+import com.example.expensetrackerapp.data.TransactionResponse
 import com.example.expensetrackerapp.db.entiity.Recipient
+import com.example.expensetrackerapp.db.entiity.TransactionEntity
 import com.example.expensetrackerapp.di.DispatcherIo
 import com.example.expensetrackerapp.domain.RecipientUseCase
 import com.example.expensetrackerapp.domain.TransactionUseCase
@@ -11,6 +14,7 @@ import com.example.expensetrackerapp.viewmodel.uistate.RecipientUI
 import com.example.expensetrackerapp.viewmodel.uistate.TransactionUI
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -19,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.random.Random
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -40,7 +45,6 @@ class DashboardViewModel @Inject constructor(
     val userBalance: StateFlow<Double> = _userBalance
 
     private var initialRecipientDataLoaded = false
-    private var initialTransactionDataLoaded = false
 
     init {
         loadInitialData()
@@ -68,6 +72,10 @@ class DashboardViewModel @Inject constructor(
                 launch {
                     getTransactions()
                 }
+
+                launch {
+                    simulateSynOnTransaction()
+                }
             }
         }
     }
@@ -79,9 +87,7 @@ class DashboardViewModel @Inject constructor(
                 Log.e(TAG, "getUserBalance: Error Occurred", e)
             }
             .collect { balance ->
-                balance?.let {
-                    _userBalance.value = balance
-                }
+                _userBalance.value = balance
             }
     }
 
@@ -96,9 +102,12 @@ class DashboardViewModel @Inject constructor(
             .collect { recipientList ->
                 _recipientUiState.value = RecipientUI.Success(recipientList)
                 Log.d(TAG, "getRecipients: $recipientList")
-                if (!initialRecipientDataLoaded) {
+                if (recipientList.isEmpty()) {
                     recipientUseCase.fetchFromServer()// Perform one-time operations here to load the initial data
-                    addTestRecipient() // On every launch of the app it will test data
+                }
+
+                if (initialRecipientDataLoaded.not()) {
+                    addTestRecipient() // On every launch of the app it will one item
                     initialRecipientDataLoaded = initialRecipientDataLoaded.not()
                 }
             }
@@ -124,14 +133,65 @@ class DashboardViewModel @Inject constructor(
             }.collect { transactionList ->
                 _transactionUiState.value = TransactionUI.Success(transactionList)
                 Log.d(TAG, "getTransactions: $transactionList")
-                if (!initialTransactionDataLoaded) {
+                if (transactionList.isEmpty()) {
                     // Perform one-time operations here
                     transactionUseCase.fetchFromServerAndSaveToDB()
-                    initialTransactionDataLoaded = initialRecipientDataLoaded.not()
                 }
             }
     }
 
+
+    /**
+     * Simulates a real-time sync scenario where a transaction occurs on another device,
+     * triggering a notification via FCM or Socket.
+     * This function is executed 5 seconds after the app launches and inserts a sample response.
+     * Since we are observing the data with Flow, the UI will update automatically once the value is inserted.
+     * The updated value can be verified after 5 seconds.
+     */
+    private suspend fun simulateSynOnTransaction(){
+        delay(5000)//15 second
+
+        val uuid = UUID.randomUUID().toString()
+        val sampleResponse = TransactionResponse(
+            id = uuid,
+            amount = Random.nextDouble(1.00, 50.00),
+            date = System.currentTimeMillis(),
+            title = "G-pay-${uuid.substring(0,4)}",
+            paymentType = Payment.Credit(),
+            imageUrl = "https://raw.githubusercontent.com/mouredev/mouredev/master/mouredev_github_profile.png",
+            recipient = Recipient(
+                id = uuid,
+                name = "name-$uuid",
+                email = "$uuid@example.com",
+                imageUrl = "$uuid-image-url"
+            )
+        )
+
+        transactionUseCase.addTransaction(sampleResponse.toTransaction())
+        recipientUseCase.addRecipient(sampleResponse.toRecipient())
+
+    }
+
+    private fun TransactionResponse.toTransaction(): TransactionEntity {
+        return TransactionEntity(
+            id = this.id,
+            amount = this.amount,
+            title = this.title,
+            date = this.date,
+            imageUrl = this.imageUrl,
+            paymentType = this.paymentType.type,
+            recipientId = this.recipient.id
+        )
+    }
+
+    private fun TransactionResponse.toRecipient():Recipient{
+        return Recipient(
+            id = this.recipient.id,
+            name = this.recipient.name,
+            email = this.recipient.email,
+            imageUrl = this.recipient.imageUrl
+        )
+    }
 
 }
 

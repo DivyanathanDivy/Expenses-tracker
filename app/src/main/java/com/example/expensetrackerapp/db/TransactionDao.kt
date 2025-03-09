@@ -19,6 +19,24 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transactions: TransactionEntity)
 
-    @Query("SELECT SUM(amount) FROM TransactionsTable")
-    fun getTotalAmount(): Flow<Double?>
+
+    /*@Query(
+        """
+    SELECT COALESCE(
+        COALESCE((SELECT SUM(amount) FROM TransactionsTable WHERE paymentType = 'Credited'), 0) - 
+        COALESCE((SELECT SUM(amount) FROM TransactionsTable WHERE paymentType = 'Debited'), 0), 
+        0
+    ) AS availableBalance
+"""
+    )*/
+
+    @Query("""
+    SELECT COALESCE(
+        SUM(CASE WHEN paymentType = 'Credited' THEN COALESCE(amount, 0) ELSE 0 END) - 
+        SUM(CASE WHEN paymentType = 'Debited' THEN COALESCE(amount, 0) ELSE 0 END), 
+        0
+    ) AS availableBalance
+    FROM TransactionsTable
+""")
+    fun getTotalAmount(): Flow<Double>
 }

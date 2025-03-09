@@ -24,7 +24,7 @@ class TransactionUseCase @Inject constructor(
             amount = this.amount,
             date = this.date,
             imageUrl = this.imageUrl,
-            paymentType = Payment.Credit(),
+            paymentType = if (this.paymentType == "Credited") Payment.Credit() else Payment.Debited(),
             title = this.title
         )
     }
@@ -33,9 +33,10 @@ class TransactionUseCase @Inject constructor(
         transactionRepo.fetchFromServerAndSaveToDB()
     }
 
-    suspend fun getUserBalance() : Flow<Double?> = transactionRepo.getUserBalance()
+    suspend fun getUserBalance() : Flow<Double> = transactionRepo.getUserBalance()
 
-    fun addTransaction(transaction: Transaction) {
 
+    suspend fun addTransaction(transaction: TransactionEntity) {
+        transactionRepo.addTransaction(transaction)
     }
 }

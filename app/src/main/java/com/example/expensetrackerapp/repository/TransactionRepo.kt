@@ -11,5 +11,5 @@ interface TransactionRepo {
     suspend fun updateTransaction(transaction: TransactionEntity)
     suspend fun deleteTransaction(transaction: TransactionEntity)
     suspend fun fetchFromServerAndSaveToDB()
-    suspend fun getUserBalance():Flow<Double?>
+    suspend fun getUserBalance():Flow<Double>
 }

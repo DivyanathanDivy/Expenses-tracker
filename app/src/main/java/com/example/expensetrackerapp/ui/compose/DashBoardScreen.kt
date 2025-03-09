@@ -48,6 +48,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.expensetrackerapp.R
+import com.example.expensetrackerapp.data.Payment
 import com.example.expensetrackerapp.data.Transaction
 import com.example.expensetrackerapp.db.entiity.Recipient
 import com.example.expensetrackerapp.ui.BottomNavItem
@@ -58,6 +59,7 @@ import com.example.expensetrackerapp.viewmodel.uistate.RecipientUI.Error
 import com.example.expensetrackerapp.viewmodel.uistate.RecipientUI.Loading
 import com.example.expensetrackerapp.viewmodel.uistate.RecipientUI.Success
 import com.example.expensetrackerapp.viewmodel.uistate.TransactionUI
+import java.util.Locale
 
 
 @Preview
@@ -150,7 +152,7 @@ fun BalanceDisplaySection(balance: Double) {
         verticalAlignment = Alignment.Bottom
     ) {
         Text(
-            text = "$ $balance",
+            text = "$ ${String.format(Locale.US,"%.2f", balance)}",
             style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
             color = Color.Black
         )
@@ -221,11 +223,11 @@ fun TransactionHistorySection(state:TransactionUI) {
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             color = Color.Black
         )
-        Text(
-            text = "Today",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Black.copy(alpha = 0.6f)
-        )
+//        Text(
+//            text = "Today",
+//            style = MaterialTheme.typography.bodyMedium,
+//            color = Color.Black.copy(alpha = 0.6f)
+//        )
     }
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -332,11 +334,18 @@ fun TransactionItem(transaction: Transaction) {
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
+
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = transaction.title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Text(text = transaction.title, fontSize = 12.sp, color = Color.Gray)
+            Text(text = transaction.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Text(text = transaction.paymentType.type, fontSize = 12.sp, color = Color.Black)
         }
-        Text(text = "${transaction.amount}", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+
+        Text(
+            text = "${if (transaction.paymentType == Payment.Credit()) "+" else "-"} $${String.format(Locale.US,"%.2f",transaction.amount)}",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
     }
 
 }

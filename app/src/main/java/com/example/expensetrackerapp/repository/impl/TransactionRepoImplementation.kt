@@ -16,7 +16,7 @@ class TransactionRepoImplementation @Inject  constructor(
         return transactionDao.getTransactions()
     }
 
-    override suspend fun getUserBalance(): Flow<Double?> {
+    override suspend fun getUserBalance(): Flow<Double> {
        return transactionDao.getTotalAmount()
     }
 
@@ -25,7 +25,7 @@ class TransactionRepoImplementation @Inject  constructor(
     }
 
     override suspend fun addTransaction(transaction: TransactionEntity) {
-        TODO("Not yet implemented")
+        transactionDao.insertTransaction(transaction)
     }
 
 
@@ -42,7 +42,7 @@ class TransactionRepoImplementation @Inject  constructor(
             TransactionEntity(
                 id = "101-transaction",
                 title = "Starbucks Coffee",
-                paymentType = Payment.Credit().type,
+                paymentType = Payment.Debited().type,
                 amount = 5.99,
                 imageUrl = "https://raw.githubusercontent.com/mouredev/mouredev/master/mouredev_github_profile.png", // ✅ GitHub-hosted static image
                 date = System.currentTimeMillis(),
@@ -51,7 +51,7 @@ class TransactionRepoImplementation @Inject  constructor(
             TransactionEntity(
                 id = "102-transaction",
                 title = "Amazon Purchase",
-                paymentType = Payment.Debited().type,
+                paymentType = Payment.Credit().type,
                 amount = 120.49,
                 imageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Amazon_icon.svg/1024px-Amazon_icon.svg.png", // ✅ Amazon logo (Wikipedia)
                 date = System.currentTimeMillis() - 86400000, // 1 day ago
