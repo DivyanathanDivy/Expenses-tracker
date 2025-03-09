@@ -1,6 +1,5 @@
 package com.example.expensetrackerapp.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.expensetrackerapp.data.Payment
@@ -33,8 +32,6 @@ class DashboardViewModel @Inject constructor(
     @DispatcherIo private val dispatcherIO: CoroutineDispatcher,
 ) :ViewModel() {
 
-    val TAG = "DashboardViewModel"
-
     private val _recipientUiState: MutableStateFlow<RecipientUI> = MutableStateFlow(RecipientUI.Loading)
     val recipientUiState: StateFlow<RecipientUI> = _recipientUiState
 
@@ -56,16 +53,15 @@ class DashboardViewModel @Inject constructor(
     }
 
     /**
-     *
-     * Asynchronously loads initial data for recipients, transactions, and user balance concurrently.
-     * Uses `supervisorScope` to run three independent jobs simultaneously, ensuring that a failure in one
+     * Asynchronously loads initial data for recipients, transactions, user balance, and chart data concurrently.
+     * Uses `supervisorScope` torun multiple independent jobs simultaneously, ensuring that a failure in one
      * job does not affect the execution of the others.
      *
+     * This function also simulates a real-time synchronization scenario for transactions.
      */
     private fun loadInitialData() {
         viewModelScope.launch {
             supervisorScope {
-
                 launch {
                     getUserBalance()
                 }
@@ -94,7 +90,7 @@ class DashboardViewModel @Inject constructor(
             transactionUseCase.getTransactionByInterval(chartInterval)
                 .flowOn(dispatcherIO)
                 .catch { e ->
-                    Log.e(TAG, "getUserBalance: Error Occurred", e)
+                    e.printStackTrace()
                 }
                 .collect { balance ->
                     _userChartData.value = balance
@@ -102,11 +98,11 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getUserBalance() {
+    suspend fun getUserBalance() {
         transactionUseCase.getUserBalance()
             .flowOn(dispatcherIO)
             .catch { e ->
-                Log.e(TAG, "getUserBalance: Error Occurred", e)
+                e.printStackTrace()
             }
             .collect { balance ->
                 _userBalance.value = balance
@@ -114,16 +110,15 @@ class DashboardViewModel @Inject constructor(
     }
 
 
-    private suspend fun getRecipients() {
+    suspend fun getRecipients() {
         recipientUseCase.getRecipients()
             .flowOn(dispatcherIO)
             .catch { e->
-                Log.e(TAG, "getRecipients: Error Occurred", e)
-                _recipientUiState.value = RecipientUI.Error("RECIPIENT_ERROR_MESSAGE")
+                e.printStackTrace()
+                _recipientUiState.value = RecipientUI.Error("FAILED_TO_FETCH_RECIPIENTS")
             }
             .collect { recipientList ->
                 _recipientUiState.value = RecipientUI.Success(recipientList)
-                Log.d(TAG, "getRecipients: $recipientList")
                 if (recipientList.isEmpty()) {
                     recipientUseCase.fetchFromServer()// Perform one-time operations here to load the initial data
                 }
@@ -131,15 +126,14 @@ class DashboardViewModel @Inject constructor(
     }
 
 
-    private suspend fun getTransactions() {
+    suspend fun getTransactions() {
         transactionUseCase.getTransactions()
             .flowOn(dispatcherIO)
             .catch { e ->
-                Log.e(TAG, "getTransactions: Error Occurred", e)
+                e.printStackTrace()
                 _transactionUiState.value = TransactionUI.Error("TRANSACTION_ERROR_MESSAGE")
             }.collect { transactionList ->
                 _transactionUiState.value = TransactionUI.Success(transactionList)
-                Log.d(TAG, "getTransactions: $transactionList")
                 if (transactionList.isEmpty()) {
                     // Perform one-time operations here
                     transactionUseCase.fetchFromServerAndSaveToDB()
@@ -155,7 +149,7 @@ class DashboardViewModel @Inject constructor(
      * Since we are observing the data with Flow, the UI will update automatically once the value is inserted.
      * The updated value can be verified after 3 seconds.
      */
-    private suspend fun simulateSynOnTransaction(){
+     suspend fun simulateSynOnTransaction(){
         delay(3000)//3 seconds
 
         val arrayPayment = arrayOf("G-Pay","Phone-Pe","Upi-Payment") // For random payment
@@ -179,7 +173,7 @@ class DashboardViewModel @Inject constructor(
         transactionUseCase.addTransaction(sampleResponse.toTransaction())
         recipientUseCase.addRecipient(sampleResponse.toRecipient())
 
-        if (++initialFetchToLoadDataCount < 5) // Fetch for the first time on 3 sec interval
+        if (++initialFetchToLoadDataCount < 3) // Fetch for the first time on 3 sec interval
             simulateSynOnTransaction()
 
     }
@@ -207,7 +201,6 @@ class DashboardViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        Log.d(TAG, "onCleared: ")
     }
 
 }

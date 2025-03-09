@@ -3,6 +3,7 @@ package com.example.expensetrackerapp.domain
 import com.example.expensetrackerapp.data.Payment
 import com.example.expensetrackerapp.data.Transaction
 import com.example.expensetrackerapp.db.entiity.TransactionEntity
+import com.example.expensetrackerapp.db.entiity.toTransaction
 import com.example.expensetrackerapp.repository.TransactionRepo
 import com.example.expensetrackerapp.viewmodel.uistate.ChartInterval
 import kotlinx.coroutines.flow.Flow
@@ -20,16 +21,7 @@ class TransactionUseCase @Inject constructor(
         }
     }
 
-    private fun TransactionEntity.toTransaction(): Transaction {
-        return Transaction(
-            id = this.id,
-            amount = this.amount,
-            date = this.date,
-            imageUrl = this.imageUrl,
-            paymentType = if (this.paymentType == "Credited") Payment.Credit() else Payment.Debited(),
-            title = this.title
-        )
-    }
+
 
     suspend fun fetchFromServerAndSaveToDB(){
         transactionRepo.fetchFromServerAndSaveToDB()

@@ -77,7 +77,12 @@ dependencies {
 
     //coil
     implementation(libs.coil.compose)
-    implementation("androidx.compose.animation:animation:1.5.0")
+
+    //
+    //test dependency
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.kotlin.test)
 
     implementation(libs.material)
     implementation(libs.androidx.compose.testing)

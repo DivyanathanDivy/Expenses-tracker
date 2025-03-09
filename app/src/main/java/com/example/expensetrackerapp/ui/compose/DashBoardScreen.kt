@@ -191,7 +191,7 @@ fun GraphPlaceholder(yPoints: List<Float>, onLabelClick: (String) -> Unit = {}
 @Composable
 fun CubicChart(
     modifier: Modifier = Modifier,
-    yPoints: List<Float> = listOf(199f, 52f, 193f, 290f, 150f, 445f),
+    yPoints: List<Float>,
     graphColor: Color = Color.White,
     onLabelClick: (String) -> Unit = {}  // Callback for label clicks
 ) {
