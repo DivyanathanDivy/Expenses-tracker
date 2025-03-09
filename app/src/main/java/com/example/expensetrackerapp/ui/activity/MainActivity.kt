@@ -34,12 +34,26 @@ class MainActivity : ComponentActivity() {
 }
 
 
+
 @Composable
 fun MainScreen(dashboardViewModel: DashboardViewModel) {
     val navController = rememberNavController()
 
     Scaffold(
-        bottomBar = { CustomBottomNavBarWithFab(navController) }
+        bottomBar = {
+            CustomBottomNavBarWithFab(
+                navController = navController,
+                onItemSelected = { route ->
+                    navController.navigate(route) {
+                        launchSingleTop = true        // Avoid creating new instances
+                        restoreState = true           // Restore previous state if exists
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true          // Save state of previous destinations
+                        }
+                    }
+                }
+            )
+        }
     ) { paddingValues ->
         NavHost(
             navController = navController,
@@ -54,4 +68,7 @@ fun MainScreen(dashboardViewModel: DashboardViewModel) {
         }
     }
 }
+
+
+
 

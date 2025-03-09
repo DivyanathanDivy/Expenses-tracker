@@ -33,7 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -204,7 +204,7 @@ fun CubicChart(
         kotlin.math.ceil(it / 100f) * 100f
     } ?: 100f
 
-    var selectedLabel by remember { mutableStateOf<String?>("1D") }
+    var selectedLabel by rememberSaveable { mutableStateOf<String?>("1D") }
     val labelPositions = mutableMapOf<RectF, String>()
 
     Box(
@@ -440,7 +440,7 @@ fun RecipientsGrid(
     recipients: List<Recipient> = listOf(Recipient("1", "karthik", "email", "https://i.pravatar.cc/150?img=10"))
 ) {
     // State to control whether to show all recipients or only the first 5
-    var showAllRecipients by remember { mutableStateOf(false) }
+    var showAllRecipients by rememberSaveable { mutableStateOf(false) }
 
     LazyRow(
         modifier = Modifier.fillMaxWidth(),

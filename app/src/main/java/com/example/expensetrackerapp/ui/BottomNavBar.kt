@@ -1,6 +1,5 @@
 package com.example.expensetrackerapp.ui
 
-import android.annotation.SuppressLint
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,7 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
-import androidx.compose.material.Scaffold
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
@@ -27,35 +25,40 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+
 
 @Composable
-fun CustomBottomNavBarWithFab(navController: NavController) {
+fun CustomBottomNavBarWithFab(
+    navController: NavController,
+    onItemSelected: (String) -> Unit
+) {
     val items = listOf(
         NavItem(BottomNavItem.Home.label, Icons.Filled.Home, BottomNavItem.Home.route),
         NavItem(BottomNavItem.Stats.label, Icons.Filled.Search, BottomNavItem.Stats.route),
         NavItem(BottomNavItem.Profile.label, Icons.Filled.Person, BottomNavItem.Profile.route)
     )
 
-    var selectedIndex by remember { mutableStateOf(0) }
+    // Get the current route
+    val currentRoute = navController.currentDestination?.route
+    // Determine selected index based on current route
+    val selectedIndex = items.indexOfFirst { it.route == currentRoute }.takeIf { it >= 0 } ?: 0
+
     val indicatorOffset by animateDpAsState(targetValue = selectedIndex * 100.dp, label = "")
 
-    Box(modifier = Modifier
-        .width(450.dp)
-        .background(color = Color.White)) {
+    Box(
+        modifier = Modifier
+            .width(450.dp)
+            .background(color = Color.White)
+    ) {
         Row(
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -87,10 +90,11 @@ fun CustomBottomNavBarWithFab(navController: NavController) {
                     items.forEachIndexed { index, item ->
                         BottomNavItem(
                             item = item,
-                            isSelected = selectedIndex == index,
+                            isSelected = currentRoute == item.route,
                             onClick = {
-                                selectedIndex = index
-                                navController.navigate(item.route)
+                                if (currentRoute != item.route) { // Navigate only if different
+                                    onItemSelected(item.route)
+                                }
                             }
                         )
                     }
@@ -144,15 +148,7 @@ fun BottomNavItem(item: NavItem, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
-@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
-@Preview(showBackground = true)
-@Composable
-fun CustomBottomNavBarWithFabPreview() {
-    val navController = rememberNavController()
-    Scaffold {
-        CustomBottomNavBarWithFab(navController = navController)
-    }
-}
+
 
 
 data class NavItem(val label: String, val icon: ImageVector, val route: String)
