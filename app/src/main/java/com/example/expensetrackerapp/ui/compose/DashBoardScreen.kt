@@ -1,5 +1,6 @@
 package com.example.expensetrackerapp.ui.compose
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,35 +25,33 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.expensetrackerapp.R
 import com.example.expensetrackerapp.data.Payment
 import com.example.expensetrackerapp.data.Transaction
 import com.example.expensetrackerapp.db.entiity.Recipient
-import com.example.expensetrackerapp.ui.BottomNavItem
-import com.example.expensetrackerapp.ui.CustomBottomNavBarWithFab
 import com.example.expensetrackerapp.viewmodel.DashboardViewModel
 import com.example.expensetrackerapp.viewmodel.uistate.RecipientUI
 import com.example.expensetrackerapp.viewmodel.uistate.RecipientUI.Error
@@ -62,30 +61,8 @@ import com.example.expensetrackerapp.viewmodel.uistate.TransactionUI
 import java.util.Locale
 
 
-@Preview
 @Composable
-fun MainScreen() {
-    val navController = rememberNavController()
-
-    Scaffold(
-        bottomBar = { CustomBottomNavBarWithFab(navController) }
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = BottomNavItem.Home.route,
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable(BottomNavItem.Home.route) { HomeScreen() }
-            composable(BottomNavItem.Stats.route) { StatsScreen() }
-            composable(BottomNavItem.Profile.route) { ProfileScreen() }
-        }
-    }
-}
-
-
-@Composable
-fun HomeScreen() {
-    val dashboardViewModel: DashboardViewModel = hiltViewModel()
+fun HomeScreen(dashboardViewModel: DashboardViewModel = hiltViewModel()) {
 
     Column(
         modifier = Modifier
@@ -178,12 +155,152 @@ fun GraphPlaceholder() {
             .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "Graph Placeholder",
-            color = MaterialTheme.colorScheme.onPrimary
-        )
+        CubicChart()
+    }
+
+}
+
+
+@Composable
+fun CubicChart(
+    modifier: Modifier = Modifier,
+    yPoints: List<Float> = listOf(199f, 52f, 193f, 290f, 150f, 445f),
+    graphColor: Color = Color.White
+) {
+    val spacing = 100f
+    val xLabels = listOf("1D", "5D", "1M", "3M", "6M", "1Y")  // X-axis labels (days)
+    val maxAmount = 500f  // Maximum value for Y-axis
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = Color.Black)
+            .padding(16.dp,0.dp,0.dp,16.dp)
+    ) {
+        Canvas(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .clip(RoundedCornerShape(20.dp))  // Rounded corners
+                .background(Color(0xFF1F1F1F))    // Dark background color
+        ) {
+            // Draw grid lines and labels
+            val gridColor = Color(0xFF3A3A3A)
+            val horizontalLines = 5
+            val verticalLines = xLabels.size - 1
+
+            val yStep = maxAmount / horizontalLines
+            val xStep = (size.width - spacing) / verticalLines
+
+            for (i in 0..horizontalLines) {
+                val y = i * (size.height / horizontalLines)
+                drawLine(
+                    color = gridColor,
+                    start = Offset(0f, y),
+                    end = Offset(size.width, y),
+                    strokeWidth = 1.dp.toPx()
+                )
+                // Y-axis labels
+                drawContext.canvas.nativeCanvas.apply {
+                    drawText(
+                        (maxAmount - i * yStep).toInt().toString(),
+                        20f,
+                        y + 10f,
+                        android.graphics.Paint().apply {
+                            color = android.graphics.Color.LTGRAY
+                            textSize = 28f
+                        }
+                    )
+                }
+            }
+
+            for (i in 0..verticalLines) {
+                val x = spacing + i * xStep
+                drawLine(
+                    color = gridColor,
+                    start = Offset(x, 0f),
+                    end = Offset(x, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+                // X-axis labels
+                drawContext.canvas.nativeCanvas.apply {
+                    drawText(
+                        xLabels[i],
+                        x,
+                        size.height - 10f,
+                        android.graphics.Paint().apply {
+                            color = android.graphics.Color.LTGRAY
+                            textSize = 28f
+                            textAlign = android.graphics.Paint.Align.CENTER
+                        }
+                    )
+                }
+            }
+
+            val spacePerHour = (size.width - spacing) / yPoints.size
+            val normX = mutableListOf<Float>()
+            val normY = mutableListOf<Float>()
+
+            val strokePath = Path().apply {
+                for (i in yPoints.indices) {
+                    val currentX = spacing + i * spacePerHour
+                    val currentY = size.height - (yPoints[i] / maxAmount * size.height)  // Normalize Y-axis
+
+                    if (i == 0) {
+                        moveTo(currentX, currentY)
+                    } else {
+                        val previousX = spacing + (i - 1) * spacePerHour
+                        val previousY = size.height - (yPoints[i - 1] / maxAmount * size.height)
+
+                        val conX1 = (previousX + currentX) / 2f
+                        val conX2 = (previousX + currentX) / 2f
+
+                        cubicTo(
+                            x1 = conX1,
+                            y1 = previousY,
+                            x2 = conX2,
+                            y2 = currentY,
+                            x3 = currentX,
+                            y3 = currentY
+                        )
+                    }
+                    normX.add(currentX)
+                    normY.add(currentY)
+                }
+            }
+
+            // Draw smooth path
+            drawPath(
+                path = strokePath,
+                color = graphColor,
+                style = Stroke(
+                    width = 4.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            )
+
+            // Draw points and markers
+            (normX.indices).forEach { index ->
+                drawCircle(
+                    color = graphColor,
+                    radius = 6.dp.toPx(),
+                    center = Offset(normX[index], normY[index])
+                )
+                if (index == normX.size - 2) {  // Highlight last significant point
+                    drawCircle(
+                        color = Color.White,
+                        radius = 6.dp.toPx(),
+                        center = Offset(normX[index], normY[index])
+                    )
+                }
+            }
+        }
     }
 }
+
+
+
+
 
 @Composable
 fun RecipientsSection(state: RecipientUI) {
@@ -256,7 +373,6 @@ fun TransactionHistorySection(state:TransactionUI) {
 
 
 
-@Preview
 @Composable
 fun RecipientsGrid(recipients :List<Recipient> = listOf(Recipient("1","karthik","email","https://i.pravatar.cc/150?img=10"))) {
 

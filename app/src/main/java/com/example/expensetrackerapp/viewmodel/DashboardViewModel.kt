@@ -46,8 +46,10 @@ class DashboardViewModel @Inject constructor(
 
     private var initialRecipientDataLoaded = false
 
+
     init {
-        loadInitialData()
+        Log.d(TAG, "Init block :")
+            loadInitialData()
     }
 
     /**
@@ -74,7 +76,7 @@ class DashboardViewModel @Inject constructor(
                 }
 
                 launch {
-                    simulateSynOnTransaction()
+                    simulateSynOnTransaction() // Simulate a real-time sync scenario
                 }
             }
         }
@@ -149,7 +151,7 @@ class DashboardViewModel @Inject constructor(
      * The updated value can be verified after 5 seconds.
      */
     private suspend fun simulateSynOnTransaction(){
-        delay(5000)//15 second
+        delay(5000)//5 seconds
 
         val uuid = UUID.randomUUID().toString()
         val sampleResponse = TransactionResponse(
@@ -191,6 +193,11 @@ class DashboardViewModel @Inject constructor(
             email = this.recipient.email,
             imageUrl = this.recipient.imageUrl
         )
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d(TAG, "onCleared: ")
     }
 
 }
