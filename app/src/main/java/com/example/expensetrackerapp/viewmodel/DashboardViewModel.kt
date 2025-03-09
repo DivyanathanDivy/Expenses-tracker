@@ -89,15 +89,17 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getChartData(chartInterval: ChartInterval = ChartInterval.OneDay) {
-        transactionUseCase.getTransactionByInterval(chartInterval)
-            .flowOn(dispatcherIO)
-            .catch { e ->
-                Log.e(TAG, "getUserBalance: Error Occurred", e)
-            }
-            .collect { balance ->
-                _userChartData.value = balance
-            }
+    fun getChartData(chartInterval: ChartInterval = ChartInterval.OneDay) {
+        viewModelScope.launch {
+            transactionUseCase.getTransactionByInterval(chartInterval)
+                .flowOn(dispatcherIO)
+                .catch { e ->
+                    Log.e(TAG, "getUserBalance: Error Occurred", e)
+                }
+                .collect { balance ->
+                    _userChartData.value = balance
+                }
+        }
     }
 
     private suspend fun getUserBalance() {

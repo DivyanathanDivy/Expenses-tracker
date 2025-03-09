@@ -1,7 +1,9 @@
 package com.example.expensetrackerapp.ui.compose
 
+import android.graphics.RectF
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,15 +30,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
@@ -76,7 +84,21 @@ fun HomeScreen(dashboardViewModel: DashboardViewModel = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        GraphPlaceholder(dashboardViewModel.userChartData.collectAsState().value)
+        GraphPlaceholder(dashboardViewModel.userChartData.collectAsState().value,
+            onLabelClick = { label ->
+                when (label) {
+                    "1D" -> dashboardViewModel.getChartData(com.example.expensetrackerapp.viewmodel.uistate.ChartInterval.OneDay)
+                    "5D" -> dashboardViewModel.getChartData(com.example.expensetrackerapp.viewmodel.uistate.ChartInterval.FiveDay)
+                    "1M" -> dashboardViewModel.getChartData(com.example.expensetrackerapp.viewmodel.uistate.ChartInterval.OneMonth)
+                    "3M" -> dashboardViewModel.getChartData(com.example.expensetrackerapp.viewmodel.uistate.ChartInterval.ThreeMonth)
+                    "6M" -> dashboardViewModel.getChartData(com.example.expensetrackerapp.viewmodel.uistate.ChartInterval.SixMonth)
+                    "1Y" -> dashboardViewModel.getChartData(com.example.expensetrackerapp.viewmodel.uistate.ChartInterval.OneYear)
+                    else -> {
+                        // Handle invalid label
+                    }
+                }
+
+            })
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -146,16 +168,21 @@ fun BalanceDisplaySection(balance: Double) {
 }
 
 @Composable
-fun GraphPlaceholder(yPoints: List<Float>) {
+fun GraphPlaceholder(yPoints: List<Float>, onLabelClick: (String) -> Unit = {}
+) {
     Box(
-        modifier= Modifier
+        modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center
     ) {
-        CubicChart(yPoints = yPoints)
+        CubicChart(yPoints = yPoints,
+            onLabelClick = { label ->
+                onLabelClick(label)
+                println("Clicked on label: $label")
+            })
     }
 
 }
@@ -165,16 +192,20 @@ fun GraphPlaceholder(yPoints: List<Float>) {
 fun CubicChart(
     modifier: Modifier = Modifier,
     yPoints: List<Float> = listOf(199f, 52f, 193f, 290f, 150f, 445f),
-    graphColor: Color = Color.White
+    graphColor: Color = Color.White,
+    onLabelClick: (String) -> Unit = {}  // Callback for label clicks
 ) {
-    val spacing = 80f  // Increased left padding for 3-digit Y-axis labels
-    val extraSpace = 50f  // Right padding for last X-axis label
-    val extraBottomHeight = 50f  // Extra height for bottom padding and X-axis labels
-    val extraTopHeight = 50f  // Extra height for top padding
+    val spacing = 80f
+    val extraSpace = 50f
+    val extraBottomHeight = 100f  // Increased height for button-like labels
+    val extraTopHeight = 50f
     val xLabels = listOf("1D", "5D", "1M", "3M", "6M", "1Y")
     val maxAmount = yPoints.maxOrNull()?.let {
-        kotlin.math.ceil(it / 100f) * 100f  // Round up to the nearest hundred
+        kotlin.math.ceil(it / 100f) * 100f
     } ?: 100f
+
+    var selectedLabel by remember { mutableStateOf<String?>("1D") }
+    val labelPositions = mutableMapOf<RectF, String>()
 
     Box(
         modifier = Modifier
@@ -184,68 +215,103 @@ fun CubicChart(
         Canvas(
             modifier = modifier
                 .fillMaxWidth()
-                .height(350.dp)  // Increased height for Y-axis and padding
+                .height(400.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(Color(0xFF1F1F1F))
+                .pointerInput(Unit) {
+                    detectTapGestures { offset ->
+                        labelPositions.forEach { (rect, label) ->
+                            if (rect.contains(offset.x, offset.y)) {
+                                selectedLabel = label
+                                onLabelClick(label)
+                            }
+                        }
+                    }
+                }
         ) {
             val gridColor = Color(0xFF3A3A3A)
             val horizontalLines = 5
             val verticalLines = xLabels.size - 1
-
             val yStep = maxAmount / horizontalLines
             val xStep = (size.width - spacing - extraSpace) / verticalLines
 
-            // Draw horizontal grid lines and Y-axis labels
+            // Draw horizontal grid lines, Y-axis labels, and X-axis line
             for (i in 0..horizontalLines) {
                 val y = extraTopHeight + i * ((size.height - extraTopHeight - extraBottomHeight) / horizontalLines)
+
+                // Grid lines
                 drawLine(
                     color = gridColor,
-                    start = Offset(spacing, y),  // Start grid lines after left padding
+                    start = Offset(spacing, y),
                     end = Offset(size.width, y),
                     strokeWidth = 1.dp.toPx()
                 )
+
+                // Y-axis labels
+                val yAxisLabel = (maxAmount - i * yStep).toInt().toString()
                 drawContext.canvas.nativeCanvas.apply {
+                    val textPaint = android.graphics.Paint().apply {
+                        color = android.graphics.Color.WHITE
+                        textSize = 28f
+                        textAlign = android.graphics.Paint.Align.RIGHT
+                    }
                     drawText(
-                        (maxAmount - i * yStep).toInt().toString(),
-                        spacing - 20f,  // Move labels further left for visibility
-                        y + 10f,
-                        android.graphics.Paint().apply {
-                            color = android.graphics.Color.LTGRAY
-                            textSize = 28f
-                            textAlign = android.graphics.Paint.Align.RIGHT  // Align labels to the right edge
-                        }
+                        yAxisLabel,
+                        spacing - 10f,
+                        y + textPaint.textSize / 3,
+                        textPaint
                     )
                 }
             }
 
-            // Draw vertical grid lines and X-axis labels
+            // X-axis line
+            drawLine(
+                color = gridColor,
+                start = Offset(spacing, size.height - extraBottomHeight),
+                end = Offset(size.width, size.height - extraBottomHeight),
+                strokeWidth = 2.dp.toPx()
+            )
+
+            // Draw vertical grid lines and X-axis labels as buttons
             for (i in 0..verticalLines) {
                 val x = spacing + i * xStep
-                drawLine(
-                    color = gridColor,
-                    start = Offset(x, extraTopHeight),  // Start from extraTopHeight
-                    end = Offset(x, size.height - extraBottomHeight),  // End before extraBottomHeight
-                    strokeWidth = 1.dp.toPx()
+                val buttonWidth = 80f
+                val buttonHeight = 40f
+                val buttonX = x - buttonWidth / 2
+                val buttonY = size.height - buttonHeight - 20f
+
+                val isSelected = xLabels[i] == selectedLabel
+                val buttonColor = if (isSelected) Color(0xFF3D85C6) else Color(0xFF2A2A2A)
+                val textColor = if (isSelected) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+
+                drawRoundRect(
+                    color = buttonColor,
+                    topLeft = Offset(buttonX, buttonY),
+                    size = androidx.compose.ui.geometry.Size(buttonWidth, buttonHeight),
+                    cornerRadius = CornerRadius(20f, 20f)
                 )
-                drawContext.canvas.nativeCanvas.apply {
-                    drawText(
-                        xLabels[i],
-                        x,
-                        size.height - 10f,  // X-axis labels stay at bottom
-                        android.graphics.Paint().apply {
-                            color = android.graphics.Color.LTGRAY
-                            textSize = 28f
-                            textAlign = android.graphics.Paint.Align.CENTER
-                        }
-                    )
+
+                // Button text
+                val textPaint = android.graphics.Paint().apply {
+                    color = textColor
+                    textSize = 28f
+                    textAlign = android.graphics.Paint.Align.CENTER
+                    isFakeBoldText = true
                 }
+
+                val labelY = buttonY + buttonHeight / 2 + textPaint.textSize / 3
+                drawContext.canvas.nativeCanvas.apply {
+                    drawText(xLabels[i], x, labelY, textPaint)
+                }
+
+                val rect = RectF(buttonX, buttonY, buttonX + buttonWidth, buttonY + buttonHeight)
+                labelPositions[rect] = xLabels[i]
             }
 
+            // Draw graph line
             val spacePerHour = (size.width - spacing - extraSpace) / yPoints.size
             val normX = mutableListOf<Float>()
             val normY = mutableListOf<Float>()
-
-            // Create a smooth cubic path
             val strokePath = Path().apply {
                 for (i in yPoints.indices) {
                     val currentX = spacing + i * spacePerHour
@@ -256,35 +322,22 @@ fun CubicChart(
                     } else {
                         val previousX = spacing + (i - 1) * spacePerHour
                         val previousY = size.height - extraBottomHeight - (yPoints[i - 1] / maxAmount * (size.height - extraTopHeight - extraBottomHeight))
-
                         val conX1 = (previousX + currentX) / 2f
                         val conX2 = (previousX + currentX) / 2f
 
-                        cubicTo(
-                            x1 = conX1,
-                            y1 = previousY,
-                            x2 = conX2,
-                            y2 = currentY,
-                            x3 = currentX,
-                            y3 = currentY
-                        )
+                        cubicTo(conX1, previousY, conX2, currentY, currentX, currentY)
                     }
                     normX.add(currentX)
                     normY.add(currentY)
                 }
             }
 
-            // Draw smooth path
             drawPath(
                 path = strokePath,
                 color = graphColor,
-                style = Stroke(
-                    width = 4.dp.toPx(),
-                    cap = StrokeCap.Round
-                )
+                style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
             )
 
-            // Draw points and markers
             normX.indices.forEach { index ->
                 drawCircle(
                     color = graphColor,
@@ -302,6 +355,11 @@ fun CubicChart(
         }
     }
 }
+
+
+
+
+
 
 
 
