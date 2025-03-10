@@ -24,11 +24,24 @@ The app uses the Model-View-ViewModel (MVVM) architecture. This separates the bu
 The user's balance is calculated from the transaction database by subtracting the total debited amount from the total credited amount.
 
 ### Chart to show Transaction for period
-The chart shows the user's transactions, allowing them to choose different periods such as 1 day, 5 days, 1 month, 3 months, 5 months, and 1 year. The values are observed in real-time, so any new entries in the database will automatically update the UI.
+The chart shows the user's transactions, allowing them to choose different 
+periods such as 1 day, 5 days, 1 month, 3 months, 5 months, and 1 year. The values are observed in real-time, so any new entries in the database will automatically update the UI.
 
 ### Recipient List
 The Recipient section displays a list of 5 recipients, along with a +X indicator showing the number of additional recipients. When the user clicks on the + icon, they can view all recipients and scroll through them horizontally.
 
 ### Transaction History
 Shows the user's transaction history, including payment details indicating whether the amount is credited or debited, along with the merchant name. A credited amount is indicated with a + and a debited amount with a -. The values are observed in real-time.
+
+### Home Screen
+
+![Home_Screen](https://github.com/user-attachments/assets/bb46c2f7-b97d-43f7-9457-a8a61acce337)
+
+### Demo Video
+
+
+
+https://github.com/user-attachments/assets/4c191ba2-0b36-4468-8fdd-9908584c026d
+
+
 
