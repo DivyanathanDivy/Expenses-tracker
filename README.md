@@ -39,7 +39,7 @@ The ViewModels are fully unit tested, ensuring the business logic is reliable an
 
 ### Home Screen
 
-![Home_Screen](https://github.com/user-attachments/assets/bb46c2f7-b97d-43f7-9457-a8a61acce337)
+<img src="https://github.com/user-attachments/assets/bb46c2f7-b97d-43f7-9457-a8a61acce337" alt="Home_Screen" style="width:60%;"/>
 
 ### Demo Video
 
