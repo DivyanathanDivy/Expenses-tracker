@@ -33,6 +33,10 @@ The Recipient section displays a list of 5 recipients, along with a +X indicator
 ### Transaction History
 Shows the user's transaction history, including payment details indicating whether the amount is credited or debited, along with the merchant name. A credited amount is indicated with a + and a debited amount with a -. The values are observed in real-time.
 
+### Testing
+
+The ViewModels are fully unit tested, ensuring the business logic is reliable and the app is maintainable. 
+
 ### Home Screen
 
 ![Home_Screen](https://github.com/user-attachments/assets/bb46c2f7-b97d-43f7-9457-a8a61acce337)
@@ -40,8 +44,12 @@ Shows the user's transaction history, including payment details indicating wheth
 ### Demo Video
 
 
-
 https://github.com/user-attachments/assets/4c191ba2-0b36-4468-8fdd-9908584c026d
+
+
+## Conclusion
+
+This project demonstrates how to build a modern Android app using Jetpack Compose. It focuses on clean architecture, efficient state management, and best practices. The features and improvements showcase a comprehensive skill set in Android development.
 
 
 
