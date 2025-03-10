@@ -44,7 +44,8 @@ The ViewModels are fully unit tested, ensuring the business logic is reliable an
 ### Demo Video
 
 
-https://github.com/user-attachments/assets/4c191ba2-0b36-4468-8fdd-9908584c026d
+https://github.com/user-attachments/assets/fa08919e-e891-485a-b68f-c4799ecbba81
+
 
 
 ## Conclusion
