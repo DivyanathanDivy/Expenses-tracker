@@ -56,7 +56,7 @@ class TransactionRepoImplementation @Inject  constructor(
                 id = "102-transaction",
                 title = "Amazon Purchase",
                 paymentType = Payment.Credit().type,
-                amount = 120.49,
+                amount = 450.49,
                 imageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Amazon_icon.svg/1024px-Amazon_icon.svg.png", // ✅ Amazon logo (Wikipedia)
                 date = System.currentTimeMillis() - 86400000, // 1 day ago
                 recipientId ="102-Recipient"
@@ -74,7 +74,7 @@ class TransactionRepoImplementation @Inject  constructor(
                 id = "104-transaction",
                 title = "ICICI",
                 paymentType = Payment.Credit().type,
-                amount = 18.75,
+                amount = 500.75,
                 imageUrl = "https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.png", // ✅ Uber logo (Wikipedia)
                 date = System.currentTimeMillis() - (3 * 86400000), // 3 days ago
                 recipientId = "104-Recipient"
